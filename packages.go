@@ -195,7 +195,6 @@ func (s *server) readPackagesJSON() error {
 	if err != nil {
 		return err
 	}
-	console.Debugf("%+v\n", *o)
 	pkgs := &pkgs{}
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(o)
