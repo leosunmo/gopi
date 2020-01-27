@@ -1,0 +1,16 @@
+ 
+<!DOCTYPE html>
+<html>
+<head>
+  <title>All packages</title>
+</head>
+<body>
+  {{- range $pkgName, $pkgs := . }}
+    {{- range $pkg := . }}
+      <a href="{{ $pkg.Name }}">{{ $pkg.Name }}</a><br>
+    {{- end }}
+  {{- else }}
+    <p>There are no packages</p>
+  {{- end }}
+</body>
+</html>

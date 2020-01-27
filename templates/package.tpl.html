@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Package</title>
+</head>
+<body>
+  {{- range $pkg := . }}
+    <a href="{{ $pkg.URL }}">{{ $pkg.FileName }}</a><br>
+  {{- else }}
+    <p>There are no packages</p>
+  {{- end }}
+</body>
+</html>
