@@ -34,7 +34,7 @@ func main() {
 }
 
 func run() error {
-	flag.StringVar(&endpoint, "endpoint", "", "S3 server endpoint")
+	flag.StringVar(&endpoint, "endpoint", "http://localhost:9000", "S3 server endpoint")
 	flag.StringVar(&accessKey, "accessKey", "", "Access key of S3 storage")
 	flag.StringVar(&secretKey, "secretKey", "", "Secret key of S3 storage")
 	flag.StringVar(&bucket, "bucket", "", "Bucket name which hosts static files")
@@ -44,6 +44,9 @@ func run() error {
 
 	if strings.TrimSpace(bucket) == "" {
 		console.Fatalln(`Bucket name cannot be empty, please provide 'gopi -bucket "mybucket"'`)
+	}
+	if strings.TrimSpace(endpoint) == "" {
+		console.Fatalln(`Endpoint cannot be empty, please provide 'gopi -endpoint "http://localhost:9000/"'`)
 	}
 
 	console.DebugPrint = debug
