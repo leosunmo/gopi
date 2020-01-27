@@ -1,0 +1,30 @@
+version: '3.7'
+
+services:
+  minio:
+    image: minio/minio
+    volumes:
+      - ./s3-data:/data
+    command:
+      - 'server'
+      - '/data'
+    ports:
+      - 9000:9000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 1s
+      timeout: 3s
+      retries: 3
+
+  gopi:
+    image: gopi:dev
+    build: ./
+    environment:
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+    command: ["-bucket", "gopi", "-endpoint", "http://minio:9000", "-debug"]
+    ports:
+      - 8080:8080
+    restart: on-failure
+    depends_on:
+      - minio
