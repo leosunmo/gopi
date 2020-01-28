@@ -1,0 +1,27 @@
+{{ define "packageList" }}
+<div class="row">
+  <div class="container">
+  <div class="col align-self-center">
+    <div class="page-header">
+      <h1>Packages</h1>
+    </div>
+    <table class="table table-striped">
+      <thead class="thead-dark">
+      <th>Name</th>
+        <th>Version</th>
+        <!-- <th>&nbsp;</th> -->
+      </thead>
+      <tbody>
+        {{-  $packages := . }}
+        {{- range $pkgName, $pkgs := $packages }}
+          <tr>
+          <td><a href="package/{{ $pkgName }}">{{ $pkgName }}</a></td>
+            <td>{{ $packages.GetLatestVersion $pkgName }}</td>
+          </tr>
+        {{- end}}
+      </tbody>
+    </table>
+  </div>
+  </div>
+</div>
+{{ end }}
