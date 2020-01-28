@@ -12,6 +12,24 @@ import (
 	"github.com/minio/minio/pkg/console"
 )
 
+func (s *server) HomeHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		console.Infof("templates: \n%v\n", s.templates.DefinedTemplates())
+		s.templates.ExecuteTemplate(w, "home.tpl.html", s.packages)
+	}
+}
+
+func (s *server) DetailsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		if vars["package"] == "" {
+			http.Error(w, "Package not found", http.StatusNotFound)
+		}
+
+		s.templates.ExecuteTemplate(w, "details.tpl.html", s.packages[vars["package"]])
+	}
+}
+
 func (s *server) SimpleHandler() http.HandlerFunc {
 	err := s.readPackagesJSON()
 	if err != nil {

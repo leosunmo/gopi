@@ -1,7 +1,13 @@
 package main
 
+import "net/http"
+
 func (s *server) routes() {
-	// 	s.router.HandleFunc("/", s.HomeHandler())
+	s.router.PathPrefix("/assets").Handler(http.FileServer(http.Dir("./assets/")))
+
+	s.router.HandleFunc("/", s.HomeHandler())
+	s.router.HandleFunc("/package/{package}", s.DetailsHandler())
+
 	s.router.HandleFunc("/simple/", s.SimpleHandler()).Methods("GET")
 	s.router.HandleFunc("/simple/{package}", s.SimpleHandler()).Methods("GET")
 

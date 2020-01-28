@@ -57,7 +57,10 @@ func run() error {
 		accessKey: accessKey,
 		secretKey: secretKey,
 	}
-	s := newServer(cfg)
+	s, err := newServer(cfg)
+	if err != nil {
+		return err
+	}
 	console.Infof("Serving on port %s\n", port)
 	return http.ListenAndServe("0.0.0.0:"+port, s)
 }

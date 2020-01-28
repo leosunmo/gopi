@@ -5,10 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/minio/minio-go"
 	"github.com/minio/minio/pkg/console"
+)
+
+var (
+	normaliseRe        = regexp.MustCompile(`[-_.]+`)
+	pythonVersion      = regexp.MustCompile(`-py(\d\.?\d?)`)
+	pkgNameVersion     = regexp.MustCompile(`([a-z0-9_]+([.-][a-z_][a-z0-9_]*)*)-([a-z0-9_.+-]+)`)
+	pathSeparator      = "/"
+	packageListFile    = "packages.json"
+	sourceExtensions   = []string{".tar.gz", ".tar.bz2", ".tar", ".zip", ".tgz", ".tbz"}
+	binaryExtensions   = []string{".egg", ".exe", ".whl"}
+	excludedExtensions = ".pdf"
 )
 
 type pkg struct {
@@ -48,16 +61,33 @@ func (e PkgError) Error() string {
 
 type pkgs map[string][]pkg
 
-var (
-	normaliseRe        = regexp.MustCompile(`[-_.]+`)
-	pythonVersion      = regexp.MustCompile(`-py(\d\.?\d?)`)
-	pkgNameVersion     = regexp.MustCompile(`([a-z0-9_]+([.-][a-z_][a-z0-9_]*)*)-([a-z0-9_.+-]+)`)
-	pathSeparator      = "/"
-	packageListFile    = "packages.json"
-	sourceExtensions   = []string{".tar.gz", ".tar.bz2", ".tar", ".zip", ".tgz", ".tbz"}
-	binaryExtensions   = []string{".egg", ".exe", ".whl"}
-	excludedExtensions = ".pdf"
-)
+func (ps pkgs) GetLatestVersion(pkgName string) string {
+	var rawVersions []string
+	for _, v := range ps[pkgName] {
+		rawVersions = append(rawVersions, v.Version)
+	}
+	if len(rawVersions) == 0 {
+		return ""
+	}
+	if len(rawVersions) == 1 {
+		return rawVersions[0]
+	}
+
+	vs := make([]*semver.Version, len(rawVersions))
+	for i, r := range rawVersions {
+		v, err := semver.NewVersion(r)
+		if err != nil {
+			console.Errorf("Error parsing version: %s", err)
+			continue
+		}
+		vs[i] = v
+	}
+	sort.Sort(sort.Reverse(semver.Collection(vs)))
+	if vs[0] != nil {
+		return vs[0].Original()
+	}
+	return ""
+}
 
 func (s *server) removePackage(name, version string) error {
 	for i, pkg := range s.packages[name] {

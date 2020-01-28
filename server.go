@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"html/template"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,25 +17,33 @@ import (
 )
 
 type server struct {
-	router   *mux.Router
-	s3cfg    s3Config
-	packages pkgs
-	s3       *minio.Client
+	router    *mux.Router
+	s3cfg     s3Config
+	packages  pkgs
+	s3        *minio.Client
+	templates *template.Template
 }
 
-func newServer(s3cfg s3Config) *server {
+func newServer(s3cfg s3Config) (*server, error) {
 	s := &server{}
+	var err error
 	// Make sure we connect to S3 before we start router as it depends on S3 connections
 	s.s3cfg = s3cfg
-	s.S3Connect()
-
+	err = s.S3Connect()
+	if err != nil {
+		return s, err
+	}
 	s.packages = make(map[string][]pkg)
 
 	r := mux.NewRouter()
 	s.router = r
 	s.routes()
 
-	return s
+	err = s.parseTemplates()
+	if err != nil {
+		return s, err
+	}
+	return s, nil
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -113,4 +123,13 @@ func NewCustomHTTPTransport() *http.Transport {
 		ExpectContinueTimeout: 1 * time.Second,
 		DisableCompression:    true,
 	}
+}
+
+func (s *server) parseTemplates() error {
+	templates, err := template.ParseGlob("templates/*.tpl.html")
+	if err != nil {
+		return fmt.Errorf("Failed to parse templates, %s", err.Error())
+	}
+	s.templates = templates
+	return nil
 }
