@@ -3,6 +3,7 @@ module github.com/leosunmo/gopi
 go 1.13
 
 require (
+	github.com/Masterminds/semver v1.5.0
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/go-ini/ini v1.51.1 // indirect
 	github.com/gorilla/mux v1.7.3
