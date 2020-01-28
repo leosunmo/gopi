@@ -69,6 +69,14 @@ func (s *server) removePackage(name, version string) error {
 }
 
 func (s *server) addPackage(p pkg) error {
+	// Let's make sure we refresh our in-memory package list first
+	// so we don't upload a package twice in-case the package.json
+	// has been manually edited
+
+	err := s.readPackagesJSON()
+	if err != nil {
+		return err
+	}
 	if _, exists := s.packages[p.Name]; !exists {
 		s.packages[p.Name] = []pkg{}
 	}
