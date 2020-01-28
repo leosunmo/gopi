@@ -3,44 +3,13 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"html/template"
-	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/minio/minio-go"
 	"github.com/minio/minio/pkg/console"
 )
-
-const (
-	NoType = S3Error(iota)
-	AccessDenied
-	NoSuchBucket
-	InvalidBucketName
-	NoSuchKey
-)
-
-// S3Error describes a bucket, object or network error when connecting to S3
-type S3Error uint
-
-// Error returns the mssage of a customError
-func (e S3Error) Error() string {
-	switch e {
-	case 1:
-		return "AccessDenied"
-	case 2:
-		return "NoSuchBucket"
-	case 3:
-		return "InvalidBucketName"
-	case 4:
-		return "NoSuchKey"
-	default:
-		return "UnknownError"
-	}
-}
 
 type pkg struct {
 	Name     string `json:"name"`
@@ -50,6 +19,31 @@ type pkg struct {
 	URL      string `json:"url"`
 	MD5      string `json:"md5_digest"`
 	Summary  string `json:"summary"`
+}
+
+// PkgError represents a package specific error when uploading, downloading up updating a package
+type PkgError uint
+
+const (
+	// PkgUnknown is the default/unknown error state for pkg
+	PkgUnknown = PkgError(iota)
+
+	// AlreadyExists means that the package name and version combination already exists on the server
+	AlreadyExists
+
+	// InvalidFormat means that the package the user is attempting to upload is incorrectly formatted
+	InvalidFormat
+)
+
+func (e PkgError) Error() string {
+	switch e {
+	case 1:
+		return "AlreadyExists"
+	case 2:
+		return "InvalidFormat"
+	default:
+		return "UnknownError"
+	}
 }
 
 type pkgs map[string][]pkg
@@ -65,84 +59,6 @@ var (
 	excludedExtensions = ".pdf"
 )
 
-func (s *server) SimpleHandler() http.HandlerFunc {
-	err := s.readPackagesJSON()
-	if err != nil {
-		if !errors.Is(err, NoSuchKey) {
-			console.Fatalf("Failed to read package JSON from bucket: %s\n", err.Error())
-		}
-	}
-	list, err := template.ParseFiles("templates/packages.tpl.html")
-	if err != nil {
-		console.Fatalf("Failed to parse package list HTML template: %s\n", err.Error())
-	}
-	singlePackage, err := template.ParseFiles("templates/package.tpl.html")
-	if err != nil {
-		console.Fatalf("Failed to parse package HTML template: %s\n", err.Error())
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		if vars["package"] == "" {
-			list.Execute(w, s.packages)
-		} else {
-			singlePackage.Execute(w, s.packages[vars["package"]])
-		}
-		return
-	}
-}
-
-// Path is "/simple(/)?" POSTs only
-func (s *server) UploadHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("Path: %s\n", r.URL.Path)
-		vars := mux.Vars(r)
-		action := r.FormValue(":action")
-		switch action {
-		case "file_upload":
-			console.Debugf("Action is file_upload")
-			console.Debugf("Path: %s\tPackage: %s\tVersion: %s\n", vars["pkg"], r.FormValue("name"), r.FormValue("version"))
-			err := r.ParseForm()
-			if err != nil {
-				console.Errorf("Failed to parse form, err: %s\n", err.Error())
-				http.Error(w, fmt.Sprintf("Failed to parse form"), http.StatusInternalServerError)
-				return
-			}
-			console.Debugf("FormValues:\n%+v\n\n", r.PostForm)
-			packageName := normalisePackageName(r.FormValue("name"))
-			console.Debugf("packageName %s\n", packageName)
-			r.ParseMultipartForm(32 << 20) // limit your max input length!
-
-			version := r.FormValue("version")
-			summary := r.FormValue("summary")
-			md5 := r.FormValue("md5_digest")
-
-			file, header, err := r.FormFile("content")
-
-			if packageName == "" {
-				console.Infoln("No package name detected in form, using filename as package name")
-				name := strings.Split(header.Filename, ".")
-				packageName = normalisePackageName(name[0])
-			}
-			s3Location := fmt.Sprintf("%s%s%s", packageName, pathSeparator, header.Filename)
-
-			uploadedSize, err := s.s3.PutObject(s.s3cfg.bucket, s3Location, file, -1, minio.PutObjectOptions{ContentType: "application/octet-stream"})
-			if err != nil {
-				console.Errorf("Failed to upload file %s, err %s\n", header.Filename, err.Error())
-				http.Error(w, fmt.Sprintf("Failed to upload file %s", header.Filename), http.StatusInternalServerError)
-				return
-			}
-			console.Infof("Put object %s, size %d\n", header.Filename, uploadedSize)
-			// Save to package list in server
-			err = s.addPackage(getPkg(header.Filename, version, summary, md5, s3Location))
-			if err != nil {
-				console.Errorf("Failed to write package list, err: %s\n", header.Filename, err.Error())
-				http.Error(w, fmt.Sprintf("Failed to upload file %s", header.Filename), http.StatusInternalServerError)
-				return
-			}
-		}
-	}
-}
-
 func (s *server) removePackage(name, version string) error {
 	for i, pkg := range s.packages[name] {
 		if pkg.Name == name && pkg.Version == version {
@@ -156,7 +72,14 @@ func (s *server) addPackage(p pkg) error {
 	if _, exists := s.packages[p.Name]; !exists {
 		s.packages[p.Name] = []pkg{}
 	}
+	// Check if the version we're adding already exists
+	for _, pkg := range s.packages[p.Name] {
+		if pkg.Version == p.Version {
+			return AlreadyExists
+		}
+	}
 	s.packages[p.Name] = append(s.packages[p.Name], p)
+	// Todo(LeoS): Make sure we don't add the package if the writePackageJSON function doesn't succeed.
 	return s.writePackagesJSON()
 }
 
@@ -206,8 +129,8 @@ func (s *server) readPackagesJSON() error {
 	return nil
 }
 
-// getPkg takes Filename, version from POST form and S3 location and returns a "pkg" struct
-func getPkg(fileName, version, summary, md5, location string) pkg {
+// newPkg takes Filename, version from POST form and S3 location and returns a "pkg" struct
+func newPkg(fileName, version, summary, md5, location string) pkg {
 	pkg := parseFilename(fileName)
 	pkg.FileName = fileName
 	pkg.URL = fmt.Sprintf("/api/%s", location)
