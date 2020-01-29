@@ -51,7 +51,8 @@ func (s *server) SimpleHandler() http.HandlerFunc {
 		if vars["package"] == "" {
 			list.Execute(w, s.packages)
 		} else {
-			singlePackage.Execute(w, s.packages[vars["package"]])
+			p := pkgs{vars["package"]: s.packages[vars["package"]]}
+			singlePackage.Execute(w, p)
 		}
 		return
 	}

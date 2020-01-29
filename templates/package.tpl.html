@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Package</title>
+  {{-  $packages := . }}
+  {{- range $pkgName, $pkgs := $packages }}
+  <title>{{ $pkgName }}</title>
+  {{- end}}
 </head>
 <body>
-  {{- range $pkg := . }}
-    <a href="{{ $pkg.URL }}">{{ $pkg.FileName }}</a><br>
+  {{- range $pkgName, $pkgs := $packages }}
+  {{- range $pkgs}}
+    <a href="/api{{ .URL }}">{{ .FileName }}</a><br>
   {{- else }}
     <p>There are no packages</p>
+  {{- end }}
   {{- end }}
 </body>
 </html>
