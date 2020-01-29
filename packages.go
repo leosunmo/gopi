@@ -171,7 +171,7 @@ func (s *server) readPackagesJSON() error {
 func newPkg(fileName, version, summary, md5, location string) pkg {
 	pkg := parseFilename(fileName)
 	pkg.FileName = fileName
-	pkg.URL = fmt.Sprintf("/api/%s", location)
+	pkg.URL = fmt.Sprintf("/%s", location)
 	pkg.Summary = summary
 	pkg.MD5 = md5
 	if pkg.Version != version {

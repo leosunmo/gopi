@@ -15,5 +15,6 @@ func (s *server) routes() {
 	s.router.HandleFunc("/simple", s.UploadHandler()).Methods("POST")
 	s.router.HandleFunc("/simple/", s.UploadHandler()).Methods("POST")
 
+	s.router.HandleFunc("/api/{package}/{file}", s.DownloadHander())
 	return
 }

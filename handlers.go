@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/minio/minio-go"
@@ -14,7 +16,6 @@ import (
 
 func (s *server) HomeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Infof("templates: \n%v\n", s.templates.DefinedTemplates())
 		s.templates.ExecuteTemplate(w, "home.tpl.html", s.packages)
 	}
 }
@@ -109,5 +110,25 @@ func (s *server) UploadHandler() http.HandlerFunc {
 			}
 			console.Infof("Put object %s, size %d\n", header.Filename, uploadedSize)
 		}
+	}
+}
+
+func (s *server) DownloadHander() http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		p := vars["package"]
+		f := vars["file"]
+		loc := fmt.Sprintf("%s/%s", p, f)
+		reqParams := make(url.Values)
+		reqParams.Set("response-content-disposition", fmt.Sprintf("attachment; filename=%s", f))
+		presignURL, err := s.s3.PresignedGetObject(s.s3cfg.bucket, loc, 5*time.Minute, reqParams)
+		if err != nil {
+			console.Errorf("Failed generate presigned url for %s, err %s\n", loc, err.Error())
+			http.Error(w, fmt.Sprintf("Failed to generate download url"), http.StatusInternalServerError)
+			return
+		}
+		console.Debugf("presignURL: %s\n", presignURL)
+		http.Redirect(w, r, presignURL.String(), http.StatusTemporaryRedirect)
 	}
 }

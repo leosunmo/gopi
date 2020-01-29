@@ -14,7 +14,7 @@
       <tbody>
         {{- range  . }}
           <tr>
-          <td>{{ .Name }}</td>
+            <td><a href="/api{{ .URL }}">{{ .Name }}</a></td>
             <td>{{ .Version }}</td>
           </tr>
         {{- end}}
