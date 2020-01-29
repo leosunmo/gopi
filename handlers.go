@@ -26,8 +26,8 @@ func (s *server) DetailsHandler() http.HandlerFunc {
 		if vars["package"] == "" {
 			http.Error(w, "Package not found", http.StatusNotFound)
 		}
-
-		s.templates.ExecuteTemplate(w, "details.tpl.html", s.packages[vars["package"]])
+		p := pkgs{vars["package"]: s.packages[vars["package"]]}
+		s.templates.ExecuteTemplate(w, "details.tpl.html", p)
 	}
 }
 

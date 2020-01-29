@@ -3,7 +3,10 @@
   <div class="container">
   <div class="col align-self-center">
     <div class="page-header">
-      <h1>Packages</h1>
+      {{-  $packages := . }}
+      {{- range $pkgName, $_ := $packages }}
+      <h1>{{ $pkgName }}</h1>
+      {{- end}}
     </div>
     <table class="table table-striped">
       <thead class="thead-dark">
@@ -12,11 +15,13 @@
         <!-- <th>&nbsp;</th> -->
       </thead>
       <tbody>
-        {{- range  . }}
+        {{- range $pkgName, $pkgs := $packages }}
+        {{- range $pkgs}}
           <tr>
-            <td><a href="/api{{ .URL }}">{{ .Name }}</a></td>
+            <td><a href="/api{{ .URL }}">{{ .FileName }}</a></td>
             <td>{{ .Version }}</td>
           </tr>
+        {{- end}}
         {{- end}}
       </tbody>
     </table>
