@@ -11,16 +11,16 @@
     <title>Gopi</title>
   </head>
   <body class="d-flex flex-column h-100">
-    {{ template "nav" }}
+    {{ template "_nav.tpl.html" }}
     <!-- Begin page content -->
-    {{ template "packageDetails" . }}
+    {{ template "_packagedetails.tpl.html" . }}
     <!-- 
     <div class="text-center">
       <%= paginator(pagination) %>
     </div> -->
     
 
-    {{ template "footer" }}
+    {{ template "_footer.tpl.html" }}
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
