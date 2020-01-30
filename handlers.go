@@ -10,9 +10,22 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/rpc"
+
 	"github.com/minio/minio-go"
 	"github.com/minio/minio/pkg/console"
 )
+
+func (s *server) RPCRequestInfo(i *rpc.RequestInfo) {
+	console.Debugf("[RPC2Handler] path %s hit by method %s\n", i.Request.URL.Path, i.Method)
+}
+
+func (s *server) NotFoundHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		console.Debugf("[NotFoundHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
+		http.Error(w, "404 page not found", http.StatusNotFound)
+	}
+}
 
 func (s *server) HomeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +45,7 @@ func (s *server) DetailsHandler() http.HandlerFunc {
 		if vars["package"] == "" {
 			http.Error(w, "Package not found", http.StatusNotFound)
 		}
-		p := pkgs{vars["package"]: s.packages[vars["package"]]}
+		p := packageMap{vars["package"]: s.packages[vars["package"]]}
 		s.templates.ExecuteTemplate(w, "details.tpl.html", p)
 	}
 }
@@ -59,7 +72,7 @@ func (s *server) SimpleHandler() http.HandlerFunc {
 		if vars["package"] == "" {
 			list.Execute(w, s.packages)
 		} else {
-			p := pkgs{vars["package"]: s.packages[vars["package"]]}
+			p := packageMap{vars["package"]: s.packages[vars["package"]]}
 			singlePackage.Execute(w, p)
 		}
 		return
@@ -144,5 +157,15 @@ func (s *server) DownloadHander() http.HandlerFunc {
 		}
 		console.Debugf("presignURL: %s\n", presignURL)
 		http.Redirect(w, r, presignURL.String(), http.StatusTemporaryRedirect)
+	}
+}
+
+func (s *server) SearchHandler() http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		console.Debugf("[SearchHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
+		http.Error(w, fmt.Sprintf("Search not implemented yet"), http.StatusNotImplemented)
+
+		return
 	}
 }
