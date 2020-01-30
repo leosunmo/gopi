@@ -159,13 +159,3 @@ func (s *server) DownloadHander() http.HandlerFunc {
 		http.Redirect(w, r, presignURL.String(), http.StatusTemporaryRedirect)
 	}
 }
-
-func (s *server) SearchHandler() http.HandlerFunc {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("[SearchHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
-		http.Error(w, fmt.Sprintf("Search not implemented yet"), http.StatusNotImplemented)
-
-		return
-	}
-}
