@@ -9,7 +9,7 @@ func (s *server) routes() {
 	s.router.HandleFunc("/package/{package}", s.DetailsHandler())
 
 	s.router.HandleFunc("/simple/", s.SimpleHandler()).Methods("GET")
-	s.router.HandleFunc("/simple/{package}", s.SimpleHandler()).Methods("GET")
+	s.router.HandleFunc("/simple/{package}/", s.SimpleHandler()).Methods("GET")
 
 	// There's probably a nicer way of handling both of these endpoints without redirecting
 	s.router.HandleFunc("/simple", s.UploadHandler()).Methods("POST")
