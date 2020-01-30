@@ -16,12 +16,18 @@ import (
 
 func (s *server) HomeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.templates.ExecuteTemplate(w, "home.tpl.html", s.packages)
+		console.Debugf("[HomeHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
+		err := s.templates.ExecuteTemplate(w, "home.tpl.html", s.packages)
+		if err != nil {
+			console.Errorf("Failed to execute template, %s\n", err.Error())
+		}
 	}
 }
 
 func (s *server) DetailsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		console.Debugf("[DetailsHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
+
 		vars := mux.Vars(r)
 		if vars["package"] == "" {
 			http.Error(w, "Package not found", http.StatusNotFound)
@@ -47,6 +53,8 @@ func (s *server) SimpleHandler() http.HandlerFunc {
 		console.Fatalf("Failed to parse package HTML template: %s\n", err.Error())
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		console.Debugf("[SimpleHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
+
 		vars := mux.Vars(r)
 		if vars["package"] == "" {
 			list.Execute(w, s.packages)
@@ -61,12 +69,11 @@ func (s *server) SimpleHandler() http.HandlerFunc {
 // Path is "/simple(/)?" POSTs only
 func (s *server) UploadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("Path: %s\n", r.URL.Path)
+		console.Debugf("[UploadHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
 		vars := mux.Vars(r)
 		action := r.FormValue(":action")
 		switch action {
 		case "file_upload":
-			console.Debugf("Action is file_upload")
 			console.Debugf("Path: %s\tPackage: %s\tVersion: %s\n", vars["pkg"], r.FormValue("name"), r.FormValue("version"))
 			err := r.ParseForm()
 			if err != nil {
@@ -110,6 +117,10 @@ func (s *server) UploadHandler() http.HandlerFunc {
 				return
 			}
 			console.Infof("Put object %s, size %d\n", header.Filename, uploadedSize)
+		default:
+			console.Errorf("Form action %s not supported\n", action)
+			http.Error(w, fmt.Sprintf("Unsupported form action %s", action), http.StatusNotFound)
+			return
 		}
 	}
 }
@@ -117,6 +128,8 @@ func (s *server) UploadHandler() http.HandlerFunc {
 func (s *server) DownloadHander() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		console.Debugf("[DownloadHander] path %s hit by method %s\n", r.URL.Path, r.Method)
+
 		vars := mux.Vars(r)
 		p := vars["package"]
 		f := vars["file"]
