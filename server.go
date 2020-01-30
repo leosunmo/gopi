@@ -27,6 +27,12 @@ type server struct {
 func newServer(s3cfg s3Config) (*server, error) {
 	s := &server{}
 	var err error
+
+	err = s.parseTemplates()
+	if err != nil {
+		return s, err
+	}
+
 	// Make sure we connect to S3 before we start router as it depends on S3 connections
 	s.s3cfg = s3cfg
 	err = s.S3Connect()
@@ -39,10 +45,6 @@ func newServer(s3cfg s3Config) (*server, error) {
 	s.router = r
 	s.routes()
 
-	err = s.parseTemplates()
-	if err != nil {
-		return s, err
-	}
 	return s, nil
 }
 
