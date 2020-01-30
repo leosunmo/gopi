@@ -6,7 +6,7 @@
 </head>
 <body>
   {{- range $pkgName, $pkgs := . }}
-    <a href="{{ $pkgName }}">{{ $pkgName }}</a><br>
+    <a href="{{ $pkgName }}/">{{ $pkgName }}</a><br>
   {{- else }}
     <p>There are no packages</p>
   {{- end }}
