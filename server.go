@@ -11,6 +11,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
+	"github.com/gorilla/rpc"
+	"github.com/leosunmo/gorilla-xmlrpc/xml"
+
 	"github.com/minio/minio-go"
 	"github.com/minio/minio-go/pkg/credentials"
 	"github.com/minio/minio-go/pkg/s3utils"
@@ -18,8 +22,9 @@ import (
 
 type server struct {
 	router    *mux.Router
+	rpc       *rpc.Server
 	s3cfg     s3Config
-	packages  pkgs
+	packages  packageMap
 	s3        *minio.Client
 	templates *template.Template
 }
@@ -39,10 +44,18 @@ func newServer(s3cfg s3Config) (*server, error) {
 	if err != nil {
 		return s, err
 	}
-	s.packages = make(map[string][]pkg)
+	s.packages = make(packageMap)
 
 	r := mux.NewRouter()
+	p := rpc.NewServer()
+
+	xmlrpcCodec := xml.NewCodec()
+	xmlrpcCodec.RegisterFallbackReceiver("XMLSearch")
+
+	p.RegisterCodec(xmlrpcCodec, "text/xml")
+	p.RegisterService(newXMLSearch(s), "")
 	s.router = r
+	s.rpc = p
 	s.routes()
 
 	return s, nil
