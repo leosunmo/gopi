@@ -10,13 +10,6 @@ import (
 	"github.com/minio/minio/pkg/console"
 )
 
-type s3Config struct {
-	endpoint  string
-	bucket    string
-	accessKey string
-	secretKey string
-}
-
 var (
 	endpoint  string
 	accessKey string
@@ -61,6 +54,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	console.Debugln(s.templates.DefinedTemplates())
 	console.Infof("Serving on port %s\n", port)
 	return http.ListenAndServe("0.0.0.0:"+port, s)
 }

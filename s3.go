@@ -1,5 +1,12 @@
 package main
 
+type s3Config struct {
+	endpoint  string
+	bucket    string
+	accessKey string
+	secretKey string
+}
+
 // S3Error describes a bucket, object or network error when connecting to S3
 type S3Error uint
 
