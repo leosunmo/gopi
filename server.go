@@ -7,9 +7,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	"github.com/gorilla/rpc"
@@ -62,7 +64,8 @@ func newServer(s3cfg s3Config) (*server, error) {
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
+	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, s.router)
+	loggedRouter.ServeHTTP(w, r)
 }
 
 func (s *server) S3Connect() error {
