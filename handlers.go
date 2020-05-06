@@ -22,14 +22,12 @@ func (s *server) RPCRequestInfo(i *rpc.RequestInfo) {
 
 func (s *server) NotFoundHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("[NotFoundHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
 		http.Error(w, "404 page not found", http.StatusNotFound)
 	}
 }
 
 func (s *server) HomeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("[HomeHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
 		err := s.templates.ExecuteTemplate(w, "home.tpl.html", s.packages)
 		if err != nil {
 			console.Errorf("Failed to execute template, %s\n", err.Error())
@@ -39,8 +37,6 @@ func (s *server) HomeHandler() http.HandlerFunc {
 
 func (s *server) DetailsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("[DetailsHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
-
 		vars := mux.Vars(r)
 		if vars["package"] == "" {
 			http.Error(w, "Package not found", http.StatusNotFound)
@@ -66,7 +62,6 @@ func (s *server) SimpleHandler() http.HandlerFunc {
 		console.Fatalf("Failed to parse package HTML template: %s\n", err.Error())
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("[SimpleHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
 
 		vars := mux.Vars(r)
 		if vars["package"] == "" {
@@ -82,7 +77,6 @@ func (s *server) SimpleHandler() http.HandlerFunc {
 // Path is "/simple(/)?" POSTs only
 func (s *server) UploadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("[UploadHandler] path %s hit by method %s\n", r.URL.Path, r.Method)
 		vars := mux.Vars(r)
 		action := r.FormValue(":action")
 		switch action {
@@ -141,8 +135,6 @@ func (s *server) UploadHandler() http.HandlerFunc {
 func (s *server) DownloadHander() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		console.Debugf("[DownloadHander] path %s hit by method %s\n", r.URL.Path, r.Method)
-
 		vars := mux.Vars(r)
 		p := vars["package"]
 		f := vars["file"]
