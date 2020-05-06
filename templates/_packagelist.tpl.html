@@ -14,8 +14,8 @@
         {{-  $packages := . }}
         {{- range $pkgName, $pkgs := $packages }}
           <tr>
-          <td><a href="package/{{ $pkgName }}">{{ $pkgName }}</a></td>
-            <td>{{ $packages.GetLatestVersion $pkgName }}</td>
+          <td><a href="package/{{ $pkgName }}/">{{ $pkgName }}</a></td>
+            <td>{{ $packages.GetLatestVersionString $pkgName }}</td>
           </tr>
         {{- end}}
       </tbody>

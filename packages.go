@@ -34,6 +34,10 @@ type pkg struct {
 	Summary  string `json:"summary"`
 }
 
+type pkgs []pkg
+
+type packageMap map[string]pkgs
+
 // PkgError represents a package specific error when uploading, downloading up updating a package
 type PkgError uint
 
@@ -59,9 +63,7 @@ func (e PkgError) Error() string {
 	}
 }
 
-type pkgs map[string][]pkg
-
-func (ps pkgs) GetLatestVersion(pkgName string) string {
+func (ps packageMap) GetLatestVersionString(pkgName string) string {
 	var rawVersions []string
 	for _, v := range ps[pkgName] {
 		rawVersions = append(rawVersions, v.Version)
@@ -87,6 +89,45 @@ func (ps pkgs) GetLatestVersion(pkgName string) string {
 		return vs[0].Original()
 	}
 	return ""
+}
+
+func (ps pkgs) GetLatestVersionPackage() pkg {
+	versionMap := make(map[string]pkg)
+	var rawVersions []string
+	for _, p := range ps {
+		versionMap[p.Version] = p
+		rawVersions = append(rawVersions, p.Version)
+	}
+	if len(rawVersions) == 0 {
+		return pkg{}
+	}
+	if len(rawVersions) == 1 {
+		return versionMap[rawVersions[0]]
+	}
+
+	vs := make([]*semver.Version, len(rawVersions))
+	for i, r := range rawVersions {
+		v, err := semver.NewVersion(r)
+		if err != nil {
+			console.Errorf("Error parsing package version: %s", err)
+			continue
+		}
+		vs[i] = v
+	}
+	sort.Sort(sort.Reverse(semver.Collection(vs)))
+	if vs[0] != nil {
+		return versionMap[vs[0].Original()]
+	}
+	return pkg{}
+}
+
+func (ps pkgs) GetPackageByVersion(version string) pkg {
+	for _, pVersion := range ps {
+		if pVersion.Version == version {
+			return pVersion
+		}
+	}
+	return pkg{}
 }
 
 func (s *server) removePackage(name, version string) error {
@@ -122,11 +163,11 @@ func (s *server) addPackage(p pkg) error {
 }
 
 func (s *server) writePackagesJSON() error {
-	pkgsJSON, err := json.Marshal(s.packages)
+	packageMapJSON, err := json.Marshal(s.packages)
 	if err != nil {
 		return err
 	}
-	r := bytes.NewReader(pkgsJSON)
+	r := bytes.NewReader(packageMapJSON)
 	_, err = s.s3.PutObject(s.s3cfg.bucket, packageListFile, r, -1, minio.PutObjectOptions{ContentType: "application/octet-stream"})
 	if err != nil {
 		return err
@@ -156,14 +197,14 @@ func (s *server) readPackagesJSON() error {
 	if err != nil {
 		return err
 	}
-	pkgs := &pkgs{}
+	packageMap := &packageMap{}
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(o)
-	err = json.Unmarshal(buf.Bytes(), pkgs)
+	err = json.Unmarshal(buf.Bytes(), packageMap)
 	if err != nil {
 		return err
 	}
-	s.packages = *pkgs
+	s.packages = *packageMap
 	return nil
 }
 

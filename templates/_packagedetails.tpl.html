@@ -3,7 +3,7 @@
   <div class="col align-self-center">
     <div class="page-header">
       {{-  $packages := . }}
-      {{- range $pkgName, $_ := $packages }}
+      {{- range $pkgName, $pkgs := $packages }}
       <h1>{{ $pkgName }}</h1>
       {{- end}}
     </div>

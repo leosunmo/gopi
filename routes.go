@@ -1,12 +1,20 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (s *server) routes() {
+
+	s.router.NotFoundHandler = s.NotFoundHandler()
+	s.rpc.RegisterBeforeFunc(s.RPCRequestInfo)
+
 	s.router.PathPrefix("/assets").Handler(http.FileServer(http.Dir("./assets/")))
 
+	s.router.Handle("/RPC2", s.rpc)
+
 	s.router.HandleFunc("/", s.HomeHandler())
-	s.router.HandleFunc("/package/{package}", s.DetailsHandler())
+	s.router.HandleFunc("/package/{package}/", s.DetailsHandler())
 
 	s.router.HandleFunc("/simple/", s.SimpleHandler()).Methods("GET")
 	s.router.HandleFunc("/simple/{package}/", s.SimpleHandler()).Methods("GET")
